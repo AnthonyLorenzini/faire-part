@@ -1063,7 +1063,7 @@ dlg.addEventListener("close",()=>{ if(dlg.returnValue==="ok" && dlgDone) dlgDone
 function askMoyens(){
   const wrap=document.createElement("div");
   wrap.innerHTML='<p>Un gîte, des mobil-homes, des emplacements de tentes et de camping-cars vous attendent. <span class="small">Plusieurs choix possibles.</span></p><div class="opts">'
-    +'<button type="button" class="opt" data-m="lits">Dans un lit<small>gîte ou mobil-home</small></button>'
+    +'<button type="button" class="opt" data-m="lits">Dans un lit (chambres partagées)<small>gîte ou mobil-home</small></button>'
     +'<button type="button" class="opt" data-m="tentes">En tente</button>'
     +'<button type="button" class="opt" data-m="camping">En camping-car</button></div>';
   const sel=new Set(S.moyens);

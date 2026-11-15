@@ -111,23 +111,6 @@ button{font:inherit;color:inherit}
 #hint{position:absolute;left:50%;top:calc(50% + var(--ch) / 2 + 62px);transform:translateX(-50%);
   font:400 26px/1 Allura,"Snell Roundhand",cursive;white-space:nowrap;text-align:center;transition:opacity .5s;color:var(--ink)}
 
-/* ================= ZOOM (loupe) ================= */
-#zoomBtn{font-size:0}
-#zoomBtn svg{width:24px;height:24px;stroke:var(--ink);fill:none;stroke-width:1.8;stroke-linecap:round}
-#zoomView{position:fixed;inset:0;z-index:70;background:rgba(24,21,22,.94);display:flex;flex-direction:column}
-#zoomView[hidden]{display:none}
-#zoomScroll{flex:1;min-height:0;overflow:auto;-webkit-overflow-scrolling:touch;overscroll-behavior:contain;
-  touch-action:pan-x pan-y pinch-zoom;cursor:grab}
-#zoomScroll.drag{cursor:grabbing;user-select:none}
-#zoomImg{display:block;max-width:none;height:auto;margin:0 auto;background:var(--paper);user-select:none;-webkit-user-drag:none}
-#zoomBar{display:flex;justify-content:center;align-items:center;gap:12px;padding:12px 12px calc(12px + env(safe-area-inset-bottom,0px));
-  background:rgba(24,21,22,.96);font-family:system-ui,sans-serif}
-#zoomBar button{min-width:52px;height:48px;padding:0 16px;border-radius:24px;border:1px solid #f6f5f2;background:transparent;color:#f6f5f2;
-  font:600 24px/1 system-ui,sans-serif;cursor:pointer}
-#zoomBar button#zClose{font-size:16px;background:#f6f5f2;color:#231f20}
-#zoomBar button[disabled]{opacity:.3;cursor:default}
-#zoomBar button:focus-visible{outline:3px dotted #fff;outline-offset:3px}
-
 /* ================= QUESTIONNAIRE ================= */
 .hs{position:absolute;padding:0;margin:0;border:0;background:none;cursor:pointer;
   -webkit-tap-highlight-color:transparent;border-radius:14px}
@@ -294,17 +277,8 @@ dialog p{margin:0 0 12px;font-size:18px}
     <button class="arrow" id="prev" type="button" aria-label="Page précédente">‹</button>
     <div id="dots" aria-hidden="true"></div>
     <button class="arrow" id="next" type="button" aria-label="Page suivante">›</button>
-    <button class="arrow" id="zoomBtn" type="button" aria-label="Agrandir la page" title="Agrandir la page"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="10" cy="10" r="6.5"/><path d="M15 15l5.5 5.5M10 7v6M7 10h6"/></svg></button>
   </nav>
   <div id="hint"></div>
-  <div id="zoomView" role="dialog" aria-modal="true" aria-label="Page agrandie" hidden>
-    <div id="zoomScroll" tabindex="0"><img id="zoomImg" alt="" draggable="false"></div>
-    <div id="zoomBar">
-      <button id="zOut" type="button" aria-label="Réduire">−</button>
-      <button id="zIn" type="button" aria-label="Agrandir">+</button>
-      <button id="zClose" type="button">Fermer</button>
-    </div>
-  </div>
   <button id="snd" type="button" aria-label="Couper la musique" hidden>
     <svg viewBox="0 0 24 24" aria-hidden="true"><path class="sp" d="M4 9.5v5h3.6L12 18.5v-13L7.6 9.5z"/><path class="wv" d="M15 9.2a4 4 0 0 1 0 5.6M17.4 6.8a7.4 7.4 0 0 1 0 10.4"/><path class="x" d="M15.2 9.6l5 4.8M20.2 9.6l-5 4.8"/></svg>
   </button>
@@ -821,7 +795,6 @@ const dotsEl = $("#dots"); pages.forEach(()=>dotsEl.appendChild(document.createE
 function updateNav(){
   [...dotsEl.children].forEach((d,i)=>d.classList.toggle("on",i===cur));
   $("#prev").disabled = cur===0; $("#next").disabled = cur===pages.length-1;
-  $("#zoomBtn").style.display = pages[cur].querySelector("img.bg") ? "" : "none";
 }
 let lastCur=-1;
 function updateHint(){
@@ -881,47 +854,15 @@ function turn(dir){
   animateE(f.e, dir>0?1:0, 1150, eTurn, ()=>finishFlip(true));
 }
 $("#next").addEventListener("click",()=>turn(1));
-/* ---- zoom : page agrandie, défilable (boutons + / −, double-tap, pincement) ---- */
-const zv=$("#zoomView"), zs=$("#zoomScroll"), zi=$("#zoomImg"), zb=$("#zoomBtn");
-const ZL=[1,1.7,2.6,3.6]; let zl=1;
-function zApply(){
-  const r=zi.clientWidth ? [ (zs.scrollLeft+zs.clientWidth/2)/zi.clientWidth, (zs.scrollTop+zs.clientHeight/2)/zi.clientHeight ] : [.5,0];
-  zi.style.width=Math.round(zs.clientWidth*ZL[zl])+"px";
-  zs.scrollLeft=r[0]*zi.clientWidth-zs.clientWidth/2; zs.scrollTop=r[1]*zi.clientHeight-zs.clientHeight/2;
-  $("#zOut").disabled=zl===0; $("#zIn").disabled=zl===ZL.length-1;
-}
-function openZoom(){
-  const im=pages[cur].querySelector("img.bg"); if(!im) return;
-  zi.src=im.currentSrc||im.src||im.dataset.src; zi.alt=im.alt||"";
-  zl=1; zv.hidden=false; zi.style.width=Math.round(zs.clientWidth*ZL[zl])+"px";
-  zs.scrollLeft=(zi.clientWidth-zs.clientWidth)/2; zs.scrollTop=0; zApply(); $("#zClose").focus();
-}
-function closeZoom(){ zv.hidden=true; zi.removeAttribute("src"); zb.focus({preventScroll:true}); }
-zb.addEventListener("click",openZoom);
-$("#zClose").addEventListener("click",closeZoom);
-$("#zIn").addEventListener("click",()=>{ if(zl<ZL.length-1){ zl++; zApply(); } });
-$("#zOut").addEventListener("click",()=>{ if(zl>0){ zl--; zApply(); } });
-zi.addEventListener("dblclick",()=>{ zl = zl>=ZL.length-1 ? 0 : zl+1; zApply(); });
-addEventListener("keydown",e=>{
-  if(zv.hidden) return;
-  if(e.key==="Escape") closeZoom(); else if(e.key==="+"||e.key==="=") $("#zIn").click(); else if(e.key==="-") $("#zOut").click();
-});
-addEventListener("resize",()=>{ if(!zv.hidden) zApply(); });
-let zdrag=null;   /* souris : glisser pour se déplacer dans l'image agrandie */
-zs.addEventListener("pointerdown",e=>{ if(e.pointerType!=="mouse"||e.button>0) return; zdrag={x:e.clientX,y:e.clientY,l:zs.scrollLeft,t:zs.scrollTop}; zs.classList.add("drag"); zs.setPointerCapture(e.pointerId); });
-zs.addEventListener("pointermove",e=>{ if(!zdrag) return; zs.scrollLeft=zdrag.l-(e.clientX-zdrag.x); zs.scrollTop=zdrag.t-(e.clientY-zdrag.y); });
-const zEnd=()=>{ zdrag=null; zs.classList.remove("drag"); };
-zs.addEventListener("pointerup",zEnd); zs.addEventListener("pointercancel",zEnd);
-const pinched=()=>!!(window.visualViewport && visualViewport.scale>1.03);   /* page zoomée au pincement : on ne tourne plus au glissement */
-
 $("#prev").addEventListener("click",()=>turn(-1));
 addEventListener("keydown",e=>{
-  if(document.querySelector("dialog[open]")||/INPUT|TEXTAREA/.test((e.target||{}).tagName||"")||$("#book").hidden||!$("#zoomView").hidden) return;
+  if(document.querySelector("dialog[open]")||/INPUT|TEXTAREA/.test((e.target||{}).tagName||"")||$("#book").hidden) return;
   if(e.key==="ArrowRight") turn(1); else if(e.key==="ArrowLeft") turn(-1);
 });
 
 /* glisser pour tourner : la page suit le doigt, puis termine son mouvement */
 let drag=null;
+const pinched=()=>!!(window.visualViewport && visualViewport.scale>1.03);   /* page zoomée au pincement : on ne tourne plus au glissement ni au toucher */
 deck.addEventListener("pointerdown",e=>{
   if(busy || e.button>0 || pinched() || e.target.closest("input,textarea,select,button")) { drag=null; return; }
   drag={x0:e.clientX,y0:e.clientY,id:e.pointerId,dir:0,samples:[[performance.now(),e.clientX]]};
